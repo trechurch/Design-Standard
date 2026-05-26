@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>THE AESTHETIC STANDARD • Demo</title>
+<style>
+:root {--bg:#1C1D1F;--text:#F4F1EA;--accent:#C5A059;}
+body {margin:0;padding:40px;background:var(--bg);color:var(--text);font-family:monospace;transition:background 800ms ease,color 600ms ease;}
+.insight-mode {--bg:#1C1D1F;--text:#F4F1EA;--accent:#C5A059;}
+.innovation-mode {--bg:#0A1A2F;--text:#E0FAFF;--accent:#E0FAFF;}
+.paradox-mode {--bg:#1C1D1F;--text:#F4F1EA;--accent:#F4F1EA;}
+.rebellion-mode {--bg:#2C0F0F;--text:#D62828;--accent:#D62828;}
+.dream-mode {--bg:#1A1F2E;--text:#C5A059;--accent:#C5A059;}
+
+h1 {color:var(--accent);font-size:2.6rem;margin-bottom:30px;}
+button {background:transparent;border:1px solid var(--text);color:var(--text);padding:12px 24px;margin:6px;cursor:pointer;font-family:monospace;}
+button:hover {border-color:var(--accent);color:var(--accent);}
+
+.sidebar {
+  position:fixed;right:40px;top:40px;bottom:40px;width:360px;
+  background:rgba(0,0,0,0.9);border:1px solid var(--accent);
+  padding:25px;overflow:hidden;display:flex;flex-direction:column;
+}
+.panel-container {
+  flex:1;overflow:hidden;position:relative;
+}
+.panel {
+  position:absolute;width:100%;height:100%;opacity:0;
+  transform:translateY(20px);transition:all 600ms ease;
+  overflow-y:auto;
+}
+.panel.active {
+  opacity:1;transform:translateY(0);
+}
+.panel h3 {color:var(--accent);margin:0 0 12px 0;}
+.panel p {font-size:0.85rem;line-height:1.45;margin-bottom:16px;}
+
+.nav-buttons {display:flex;gap:10px;margin-top:15px;}
+.nav-buttons button {flex:1;padding:10px;}
+</style>
+</head>
+<body class="insight-mode">
+
+<h1>THE AESTHETIC STANDARD</h1>
+
+<div>
+  <button data-mode="insight">Insight</button>
+  <button data-mode="innovation">Innovation</button>
+  <button data-mode="paradox">Paradox</button>
+  <button data-mode="rebellion">Rebellion</button>
+  <button data-mode="dream">Dream</button>
+</div>
+
+<div class="sidebar">
+  <div class="panel-container" id="panels">
+    <!-- Panels populated by JS -->
+  </div>
+  <div class="nav-buttons">
+    <button id="prev">← Prev</button>
+    <button id="next">Next →</button>
+  </div>
+</div>
+
+<script>
+let currentMode = 'insight';
+try { const s=localStorage.getItem('aestheticMode'); if(s) currentMode=s; } catch(e){}
+
+const sections = [
+  {title:"CORE PRINCIPLE", content:"Sacred Geometry meets Rebellious Intelligence.<br><br>Built on tension between ancient clarity (Solomon), impossible geometry (Escher), minimalist sanctuaries (Ando), electrified invention (Tesla), rebellious truth-telling (Banksy), Renaissance curiosity (da Vinci), cosmic introspection (Pink Floyd), strategic precision (Ender Wiggin), and dream-navigation (Jack Sawyer).<br><br>This is timelessness with voltage."},
+  {title:"VISUAL LANGUAGE", content:"Geometry: Escher paradoxes, Solomon symmetry, da Vinci linework, Ando voids, Tesla electricity.<br><br>Color: Graphite, Electric Blue-White, Muted Gold, Parchment Beige. Accents: Prism, Rebellion Red.<br><br>Texture: Raw concrete, ink, brushed metal, static grain.<br><br>Motion: Meditative transitions, sudden bursts, looping paths."},
+  {title:"DESIGN DOCTRINE", content:"Clarity born from contradiction.<br><br>Ten Commandments:<br>1. Judge with the user<br>2. Silence is a feature<br>3. Complexity must be beautiful<br>4. Every interaction reveals a layer<br>5. Rebellion serves truth<br>6. Geometry guides the mind<br>7. Electricity pulses insight<br>8. The system remembers<br>9. Sanctuaries and workshops<br>10. Every pixel serves the myth"},
+  {title:"INTERACTION MODES", content:"• Insight (Solomon): Gold, slow, clarity<br>• Innovation (Tesla+da Vinci): Blue, rapid, schematic<br>• Paradox (Escher): Shifting grids<br>• Rebellion (Banksy): Red, raw, spray-grain<br>• Dream (Pink Floyd+Sawyer): Prism drifts, ambient"},
+  {title:"PERSONALITY", content:"A wise judge, rebellious artist, geometric philosopher, lightning inventor, dream-navigator, Renaissance polymath.<br><br>Tone: calm, precise, curious, occasionally irreverent, always insightful."}
+];
+
+let currentPanel = 0;
+
+function renderPanels() {
+  const container = document.getElementById('panels');
+  container.innerHTML = '';
+  sections.forEach((sec, i) => {
+    const div = document.createElement('div');
+    div.className = 'panel';
+    div.innerHTML = `<h3>${sec.title}</h3><p>${sec.content}</p>`;
+    if(i===0) div.classList.add('active');
+    container.appendChild(div);
+  });
+}
+
+function showPanel(index) {
+  document.querySelectorAll('.panel').forEach((p,i) => {
+    p.classList.toggle('active', i===index);
+  });
+  currentPanel = index;
+}
+
+document.getElementById('next').addEventListener('click', () => {
+  let next = currentPanel + 1;
+  if(next >= sections.length) next = 0;
+  showPanel(next);
+});
+
+document.getElementById('prev').addEventListener('click', () => {
+  let prev = currentPanel - 1;
+  if(prev < 0) prev = sections.length-1;
+  showPanel(prev);
+});
+
+function setMode(mode) {
+  document.body.classList.remove('insight-mode','innovation-mode','paradox-mode','rebellion-mode','dream-mode');
+  document.body.classList.add(mode+'-mode');
+  currentMode = mode;
+  try{localStorage.setItem('aestheticMode',mode);}catch(e){}
+}
+
+document.querySelectorAll('[data-mode]').forEach(btn=>{
+  btn.addEventListener('click',()=> setMode(btn.dataset.mode));
+});
+
+renderPanels();
+setMode(currentMode);
+</script>
+</body>
+</html>
