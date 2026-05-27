@@ -2,121 +2,1044 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>THE AESTHETIC STANDARD • Demo</title>
+<title>THE AESTHETIC STANDARD • v2.0.0</title>
 <style>
-:root {--bg:#1C1D1F;--text:#F4F1EA;--accent:#C5A059;}
-body {margin:0;padding:40px;background:var(--bg);color:var(--text);font-family:monospace;transition:background 800ms ease,color 600ms ease;}
-.insight-mode {--bg:#1C1D1F;--text:#F4F1EA;--accent:#C5A059;}
-.innovation-mode {--bg:#0A1A2F;--text:#E0FAFF;--accent:#E0FAFF;}
-.paradox-mode {--bg:#1C1D1F;--text:#F4F1EA;--accent:#F4F1EA;}
-.rebellion-mode {--bg:#2C0F0F;--text:#D62828;--accent:#D62828;}
-.dream-mode {--bg:#1A1F2E;--text:#C5A059;--accent:#C5A059;}
+/* ============================================================
+   THE AESTHETIC STANDARD — SDOA v4 Token Layer
+   Version: 2.0.0 Production-Ready
+   ProtoAI Canonical Implementation
+   ============================================================ */
+:root {
+  /* Background depth scale (Ando's concrete voids) */
+  --bg-deep:        #020617;
+  --bg:             #05060a;
+  --bg-elevated:    #0c0f17;
+  --bg-elevated-2:  #111623;
+  --bg-surface:     #1a1a2e;
+  --bg-layer:       rgba(15,23,42,0.9);
+  --bg-hover:       rgba(79,140,255,0.08);
 
-h1 {color:var(--accent);font-size:2.6rem;margin-bottom:30px;}
-button {background:transparent;border:1px solid var(--text);color:var(--text);padding:12px 24px;margin:6px;cursor:pointer;font-family:monospace;}
-button:hover {border-color:var(--accent);color:var(--accent);}
+  /* Accent voltage (Tesla current) */
+  --accent:         #4f8cff;
+  --accent-strong:  #7dd3fc;
+  --accent-soft:    rgba(79,140,255,0.15);
+  --accent-dim:     rgba(79,140,255,0.08);
 
-.sidebar {
-  position:fixed;right:40px;top:40px;bottom:40px;width:360px;
-  background:rgba(0,0,0,0.9);border:1px solid var(--accent);
-  padding:25px;overflow:hidden;display:flex;flex-direction:column;
+  /* Text hierarchy (luminance cascade) */
+  --text:           #f8fafc;
+  --text-muted:     #cbd5e1;
+  --text-dim:       #94a3b8;
+
+  /* Border taxonomy */
+  --border-subtle:  #1e2435;
+  --border-mid:     rgba(148,163,184,0.15);
+  --border-active:  rgba(59,130,246,0.6);
+
+  /* Status voltage colors */
+  --color-success:  #4caf50;
+  --color-warning:  #f59e0b;
+  --color-error:    #f97373;
+
+  /* Original Aesthetic Standard palette */
+  --graphite:       #1C1D1F;
+  --gold:           #C5A059;
+  --parchment:      #F4F1EA;
+  --electric-blue:  #E0FAFF;
+  --red:            #D62828;
+
+  /* Typography */
+  --font-sans: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-mono: "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;
+
+  /* Spacing scale */
+  --space-2xs: 2px;
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
+  /* Border radius */
+  --radius-sm:  4px;
+  --radius:     8px;
+  --radius-lg:  12px;
+  --radius-pill:999px;
+
+  /* Shadows */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.5);
+  --shadow-soft: 0 12px 30px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 0 1px rgba(59,130,246,0.6);
+
+  /* Transitions */
+  --ease:   cubic-bezier(0.4,0,0.2,1);
+  --fast:   120ms;
+  --normal: 180ms;
+  --slow:   300ms;
+
+  /* Z-index strata */
+  --z-dropdown: 100;
+  --z-modal:    200;
+  --z-toast:    300;
+  --z-tooltip:  400;
+
+  /* Active mode (overridden per mode) */
+  --mode-bg:     var(--bg);
+  --mode-text:   var(--text);
+  --mode-accent: var(--gold);
+}
+
+/* === MODE OVERRIDES === */
+body.insight-mode    { --mode-bg:#1C1D1F; --mode-text:#F4F1EA; --mode-accent:#C5A059; }
+body.innovation-mode { --mode-bg:#020617; --mode-text:#E0FAFF; --mode-accent:#4f8cff; }
+body.paradox-mode    { --mode-bg:#0d0d14; --mode-text:#F4F1EA; --mode-accent:#F4F1EA; }
+body.rebellion-mode  { --mode-bg:#1a0505; --mode-text:#D62828; --mode-accent:#D62828; }
+body.dream-mode      { --mode-bg:#080818; --mode-text:#C5A059; --mode-accent:#818cf8; }
+
+/* === GLOBAL RESET === */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body {
+  background: var(--mode-bg);
+  color: var(--mode-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background 800ms var(--ease), color 600ms var(--ease);
+  overflow: hidden;
+}
+
+/* === SCROLLBARS === */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.3); }
+
+/* === LAYOUT: TWO-COLUMN === */
+#app {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* === MAIN CONTENT === */
+#main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--space-xl) var(--space-xl) 0;
+  background: radial-gradient(ellipse at top, rgba(79,140,255,0.04) 0%, transparent 60%);
+}
+
+#main-header { margin-bottom: var(--space-lg); flex-shrink: 0; }
+
+h1 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mode-accent);
+  margin: 0 0 var(--space-xs);
+  transition: color 600ms var(--ease);
+  text-shadow: 0 0 40px rgba(79,140,255,0.2);
+}
+
+.tagline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+/* === MODE BUTTONS === */
+.mode-bar {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.mode-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  padding: 5px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all var(--fast) var(--ease);
+}
+.mode-btn:hover { border-color: var(--mode-accent); color: var(--mode-accent); }
+.mode-btn.active {
+  background: var(--mode-accent);
+  color: #000;
+  border-color: var(--mode-accent);
+}
+
+/* === DEMO SCROLL AREA === */
+#demo-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: var(--space-xl);
+}
+
+/* === SECTION LABELS === */
+.demo-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 6px;
+  margin: 0 0 var(--space-sm);
+}
+.demo-label:not(:first-child) { margin-top: var(--space-xl); }
+
+/* === MONOLITHIC INPUT (Artifact #1) === */
+.monolithic {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--mode-accent);
+  padding: 8px 0;
+  transition: border-color 600ms var(--ease);
+  max-width: 600px;
+  margin-bottom: var(--space-xl);
+}
+.monolithic:focus-within { border-color: var(--accent); }
+.monolithic-glyph {
+  color: var(--mode-accent);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  transition: color 600ms var(--ease);
+  flex-shrink: 0;
+}
+.monolithic:focus-within .monolithic-glyph { color: var(--accent-strong); }
+.monolithic input {
+  background: transparent;
+  border: none;
+  color: var(--mode-text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  flex: 1;
+  transition: color 600ms var(--ease);
+}
+.monolithic input::placeholder { color: var(--text-dim); }
+
+/* === DESIGN TOKEN SWATCHES === */
+.token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--space-sm);
+  margin-bottom: 0;
+}
+.swatch {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.swatch:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.swatch-color { height: 36px; width: 100%; }
+.swatch-label {
+  padding: 5px 7px;
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.swatch-name { color: var(--text-muted); font-size: 10px; display: block; }
+
+/* === MESSAGE ARCHITECTURE === */
+.msg-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 700px;
+}
+.msg {
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 82%;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+.msg:hover { transform: translateY(-1px); }
+.msg--user {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  align-self: flex-end;
+  border-bottom-right-radius: var(--radius-sm);
+  color: #fff;
+}
+.msg--assistant {
+  background: linear-gradient(135deg, rgba(30,41,59,0.4) 0%, rgba(2,6,23,0.8) 100%);
+  border: 1px solid rgba(59,130,246,0.25);
+  align-self: flex-start;
+  border-bottom-left-radius: var(--radius-sm);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), 0 0 20px -5px rgba(59,130,246,0.1);
+}
+.msg--advisor { border-color:rgba(129,140,248,0.45); box-shadow:0 10px 40px -10px rgba(0,0,0,0.5),0 0 20px -5px rgba(129,140,248,0.15); }
+.msg--critic  { border-color:rgba(248,113,113,0.45); box-shadow:0 10px 40px -10px rgba(0,0,0,0.5),0 0 20px -5px rgba(248,113,113,0.15); }
+.msg--friend  { border-color:rgba(52,211,153,0.45);  box-shadow:0 10px 40px -10px rgba(0,0,0,0.5),0 0 20px -5px rgba(52,211,153,0.15); }
+.msg--alien   { border-color:rgba(6,182,212,0.45);   box-shadow:0 10px 40px -10px rgba(0,0,0,0.5),0 0 20px -5px rgba(6,182,212,0.15); font-family:var(--font-mono); }
+.msg__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.5;
+  margin-bottom: 6px;
+}
+.msg--user .msg__label      { color: #7dd3fc; }
+.msg--assistant .msg__label { color: #fff; }
+.msg--advisor .msg__label   { color: #818cf8; font-style: italic; }
+.msg--critic .msg__label    { color: #f87171; font-weight: 500; }
+.msg--friend .msg__label    { color: #34d399; }
+.msg--alien .msg__label     { color: #06b6d4; }
+
+/* === BUTTONS === */
+.btn-row { display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: center; margin-bottom: var(--space-sm); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 6px 16px;
+  min-height: 32px;
+  border: 1px solid transparent;
+  transition: all var(--fast) var(--ease);
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn--primary   { background: linear-gradient(135deg,var(--accent),#3b82f6); color:#fff; border-color:rgba(79,140,255,0.3); }
+.btn--primary:hover { box-shadow: 0 0 12px rgba(79,140,255,0.3); }
+.btn--secondary { background:var(--bg-elevated); color:var(--text-muted); border-color:var(--border-subtle); }
+.btn--secondary:hover { background:var(--bg-elevated-2); }
+.btn--ghost     { background:transparent; color:var(--text-dim); border-color:transparent; }
+.btn--ghost:hover { background:var(--bg-hover); color:var(--text); }
+.btn--danger    { background:rgba(239,68,68,0.12); color:#f97373; border-color:rgba(239,68,68,0.25); }
+.btn--danger:hover { background:rgba(239,68,68,0.22); }
+
+/* === CHIPS === */
+.chip-row { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated-2, #111623);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+}
+.chip:hover { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent); }
+
+/* === STATUS DOTS === */
+.status-col { display: flex; flex-direction: column; gap: var(--space-sm); }
+.status-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot--online { background:#4caf50; box-shadow:0 0 8px rgba(76,175,80,0.4); }
+.dot--warn   { background:#f59e0b; box-shadow:0 0 8px rgba(245,158,11,0.4); animation:pulse-dot 1.5s infinite; }
+.dot--error  { background:#f97373; box-shadow:0 0 8px rgba(249,115,115,0.4); }
+
+/* === SDOA INPUT === */
+.sdoa-input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 7px 12px;
+  outline: none;
+  max-width: 300px;
+  width: 100%;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.sdoa-input:focus { border-color: var(--accent); box-shadow: var(--shadow-glow); }
+.sdoa-input::placeholder { color: var(--text-dim); }
+
+/* === ANIMATIONS === */
+@keyframes pulse-dot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%     { opacity:0.6; transform:scale(1.1); }
+}
+@keyframes sdoa-fade-in {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* === SIDEBAR === */
+#sidebar {
+  background: var(--bg-elevated, #0c0f17);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+  flex-shrink: 0;
+}
+.sidebar-header h2 {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin: 0 0 4px;
+}
+.panel-counter {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
 }
 .panel-container {
-  flex:1;overflow:hidden;position:relative;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 }
 .panel {
-  position:absolute;width:100%;height:100%;opacity:0;
-  transform:translateY(20px);transition:all 600ms ease;
-  overflow-y:auto;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 350ms var(--ease), transform 350ms var(--ease);
+  overflow-y: auto;
+  padding: var(--space-md);
 }
-.panel.active {
-  opacity:1;transform:translateY(0);
+.panel.active { opacity:1; transform:translateY(0); }
+.panel h3 {
+  color: var(--mode-accent);
+  margin: 0 0 var(--space-sm);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 600ms var(--ease);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
 }
-.panel h3 {color:var(--accent);margin:0 0 12px 0;}
-.panel p {font-size:0.85rem;line-height:1.45;margin-bottom:16px;}
+.panel p {
+  font-size: 12px;
+  line-height: 1.65;
+  margin-bottom: var(--space-md);
+  color: var(--text-muted);
+}
+.panel code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-deep, #020617);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--accent-strong, #7dd3fc);
+}
+.panel pre {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-deep, #020617);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--text-dim);
+  overflow-x: auto;
+  line-height: 1.7;
+  white-space: pre;
+  margin: 0 0 var(--space-md);
+}
+.panel .tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 2px;
+}
+.tag-gold  { background:rgba(197,160,89,0.15); color:#C5A059; border:1px solid rgba(197,160,89,0.3); }
+.tag-blue  { background:rgba(79,140,255,0.15); color:#7dd3fc; border:1px solid rgba(79,140,255,0.3); }
+.tag-red   { background:rgba(214,40,40,0.15);  color:#D62828; border:1px solid rgba(214,40,40,0.3); }
+.tag-prism { background:linear-gradient(90deg,rgba(129,140,248,0.12),rgba(52,211,153,0.12)); color:#cbd5e1; border:1px solid rgba(148,163,184,0.2); }
 
-.nav-buttons {display:flex;gap:10px;margin-top:15px;}
-.nav-buttons button {flex:1;padding:10px;}
+.nav-buttons {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-layer);
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1;
+  background: var(--bg-elevated-2, #111623);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  padding: 8px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  transition: all var(--fast) var(--ease);
+}
+.nav-btn:hover { border-color:var(--mode-accent); color:var(--mode-accent); }
+
+/* === TICKER STRIP (Partner Ticker preview) === */
+.ticker-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 600px;
+  overflow: hidden;
+}
+.ticker-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  flex-shrink: 0;
+  animation: pulse-dot 1.5s infinite;
+}
+.ticker-persona { font-style: italic; }
+.ticker-advisor { color:#818cf8; font-style:italic; }
+.ticker-critic  { color:#f87171; font-weight:500; }
+.ticker-friend  { color:#34d399; }
+.ticker-alien   { color:#06b6d4; font-family:var(--font-mono); }
+.ticker-user    { color:#ffffff; font-weight:700; }
+.ticker-sep     { color:var(--text-dim); opacity:0.5; }
 </style>
 </head>
 <body class="insight-mode">
 
-<h1>THE AESTHETIC STANDARD</h1>
+<div id="app">
+  <!-- ── MAIN CONTENT ──────────────────────────────────────── -->
+  <div id="main">
+    <div id="main-header">
+      <h1>THE AESTHETIC STANDARD</h1>
+      <div class="tagline">v2.0.0 Production-Ready · Sacred Geometry meets Rebellious Intelligence · ProtoAI SDOA v4</div>
+    </div>
 
-<div>
-  <button data-mode="insight">Insight</button>
-  <button data-mode="innovation">Innovation</button>
-  <button data-mode="paradox">Paradox</button>
-  <button data-mode="rebellion">Rebellion</button>
-  <button data-mode="dream">Dream</button>
-</div>
+    <div class="mode-bar">
+      <button class="mode-btn active" data-mode="insight">⬡ Insight</button>
+      <button class="mode-btn" data-mode="innovation">⚡ Innovation</button>
+      <button class="mode-btn" data-mode="paradox">⊞ Paradox</button>
+      <button class="mode-btn" data-mode="rebellion">✕ Rebellion</button>
+      <button class="mode-btn" data-mode="dream">◎ Dream</button>
+    </div>
 
-<div class="sidebar">
-  <div class="panel-container" id="panels">
-    <!-- Panels populated by JS -->
+    <div id="demo-area">
+
+      <!-- MONOLITHIC INPUT -->
+      <div class="demo-label">The Monolithic Input · Artifact #1</div>
+      <div class="monolithic">
+        <span class="monolithic-glyph">🜁</span>
+        <input type="text" placeholder="Enter command or query…">
+      </div>
+
+      <!-- TOKEN SWATCHES -->
+      <div class="demo-label">SDOA v4 · Design Token System</div>
+      <div class="token-grid" id="tokenGrid"></div>
+
+      <!-- MESSAGE ARCHITECTURE -->
+      <div class="demo-label">Message Architecture · User / System / Persona</div>
+      <div class="msg-demo">
+        <div class="msg msg--user">
+          <div class="msg__label">You</div>
+          What is the structural doctrine of this system?
+        </div>
+        <div class="msg msg--assistant">
+          <div class="msg__label">ProtoAI</div>
+          Clarity born from contradiction. Every surface has survived multiple timelines. Avoid hyper-glossy trends or flat vector sterilization.
+        </div>
+        <div class="msg msg--assistant msg--advisor">
+          <div class="msg__label">Advisor</div>
+          The sacred ratio governs. Every grid distortion is intentional paradox — symmetry that conceals an impossible axis.
+        </div>
+        <div class="msg msg--assistant msg--critic">
+          <div class="msg__label">Critic</div>
+          The system breaks its own rules only when truth demands it. Rebellion must have purpose.
+        </div>
+        <div class="msg msg--assistant msg--alien">
+          <div class="msg__label">Alien</div>
+          SIGNAL ORIGIN: NON-EUCLIDEAN. GEOMETRY CONFIRMED. REALITY NEGOTIABLE.
+        </div>
+      </div>
+
+      <!-- BUTTON HIERARCHY -->
+      <div class="demo-label">Button Voltage Hierarchy</div>
+      <div class="btn-row">
+        <button class="btn btn--primary">Primary</button>
+        <button class="btn btn--secondary">Secondary</button>
+        <button class="btn btn--ghost">Ghost</button>
+        <button class="btn btn--danger">Danger</button>
+      </div>
+
+      <!-- CHIPS -->
+      <div class="demo-label">Chips · Micro-Interaction Units (electrify on contact)</div>
+      <div class="chip-row">
+        <span class="chip">Insight</span>
+        <span class="chip">Innovation</span>
+        <span class="chip">Paradox</span>
+        <span class="chip">Rebellion</span>
+        <span class="chip">Dream</span>
+        <span class="chip">VFS</span>
+        <span class="chip">SDOA v4</span>
+      </div>
+
+      <!-- STATUS SYSTEM -->
+      <div class="demo-label">Status Pulse System</div>
+      <div class="status-col">
+        <div class="status-row"><div class="dot dot--online"></div>System online · Tauri IPC confirmed</div>
+        <div class="status-row"><div class="dot dot--warn"></div>Initializing · Engine warming up</div>
+        <div class="status-row"><div class="dot dot--error"></div>Backend offline · Signal lost</div>
+      </div>
+
+      <!-- SDOA INPUT -->
+      <div class="demo-label">SDOA v4 Input · Focus triggers the Tesla arc</div>
+      <input class="sdoa-input" placeholder="Type to electrify…">
+
+      <!-- PARTNER TICKER -->
+      <div class="demo-label">Partner Ticker · System Nervous System</div>
+      <div class="ticker-strip">
+        <div class="ticker-dot"></div>
+        <span class="ticker-advisor">Advisor</span>
+        <span class="ticker-sep">·</span>
+        <span class="ticker-critic">Critic</span>
+        <span class="ticker-sep">·</span>
+        <span class="ticker-friend">Friend</span>
+        <span class="ticker-sep">·</span>
+        <span class="ticker-alien">Alien</span>
+        <span class="ticker-sep">·</span>
+        <span class="ticker-user">You</span>
+        <span class="ticker-sep">·</span>
+        <span style="color:var(--text-dim);font-size:10px">SIGNAL ACTIVE</span>
+      </div>
+
+    </div><!-- /demo-area -->
+  </div><!-- /main -->
+
+  <!-- ── SIDEBAR ────────────────────────────────────────────── -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h2>Aesthetic Standard</h2>
+      <div class="panel-counter" id="panelCounter">Panel 1 / N</div>
+    </div>
+    <div class="panel-container" id="panels"></div>
+    <div class="nav-buttons">
+      <button class="nav-btn" id="prev">← Prev</button>
+      <button class="nav-btn" id="next">Next →</button>
+    </div>
   </div>
-  <div class="nav-buttons">
-    <button id="prev">← Prev</button>
-    <button id="next">Next →</button>
-  </div>
-</div>
+</div><!-- /app -->
 
 <script>
-let currentMode = 'insight';
-try { const s=localStorage.getItem('aestheticMode'); if(s) currentMode=s; } catch(e){}
+// ── STATE ─────────────────────────────────────────────────────
+let currentMode  = 'insight';
+let currentPanel = 0;
+try { const s = localStorage.getItem('aestheticMode'); if(s) currentMode = s; } catch(e) {}
 
-const sections = [
-  {title:"CORE PRINCIPLE", content:"Sacred Geometry meets Rebellious Intelligence.<br><br>Built on tension between ancient clarity (Solomon), impossible geometry (Escher), minimalist sanctuaries (Ando), electrified invention (Tesla), rebellious truth-telling (Banksy), Renaissance curiosity (da Vinci), cosmic introspection (Pink Floyd), strategic precision (Ender Wiggin), and dream-navigation (Jack Sawyer).<br><br>This is timelessness with voltage."},
-  {title:"VISUAL LANGUAGE", content:"Geometry: Escher paradoxes, Solomon symmetry, da Vinci linework, Ando voids, Tesla electricity.<br><br>Color: Graphite, Electric Blue-White, Muted Gold, Parchment Beige. Accents: Prism, Rebellion Red.<br><br>Texture: Raw concrete, ink, brushed metal, static grain.<br><br>Motion: Meditative transitions, sudden bursts, looping paths."},
-  {title:"DESIGN DOCTRINE", content:"Clarity born from contradiction.<br><br>Ten Commandments:<br>1. Judge with the user<br>2. Silence is a feature<br>3. Complexity must be beautiful<br>4. Every interaction reveals a layer<br>5. Rebellion serves truth<br>6. Geometry guides the mind<br>7. Electricity pulses insight<br>8. The system remembers<br>9. Sanctuaries and workshops<br>10. Every pixel serves the myth"},
-  {title:"INTERACTION MODES", content:"• Insight (Solomon): Gold, slow, clarity<br>• Innovation (Tesla+da Vinci): Blue, rapid, schematic<br>• Paradox (Escher): Shifting grids<br>• Rebellion (Banksy): Red, raw, spray-grain<br>• Dream (Pink Floyd+Sawyer): Prism drifts, ambient"},
-  {title:"PERSONALITY", content:"A wise judge, rebellious artist, geometric philosopher, lightning inventor, dream-navigator, Renaissance polymath.<br><br>Tone: calm, precise, curious, occasionally irreverent, always insightful."}
+// ── TOKEN DEFINITIONS ─────────────────────────────────────────
+const tokens = [
+  // Background depth scale
+  {name:'--bg-deep',      hex:'#020617', label:'Void Black'},
+  {name:'--bg',           hex:'#05060a', label:'Base Shell'},
+  {name:'--bg-elevated',  hex:'#0c0f17', label:'Panel Lift'},
+  {name:'--bg-elevated-2',hex:'#111623', label:'Panel Lift 2'},
+  {name:'--bg-surface',   hex:'#1a1a2e', label:'Surface'},
+  // Accent voltage
+  {name:'--accent',       hex:'#4f8cff', label:'Electric Blue'},
+  {name:'--accent-strong',hex:'#7dd3fc', label:'High Voltage'},
+  // Text hierarchy
+  {name:'--text',         hex:'#f8fafc', label:'Full Signal'},
+  {name:'--text-muted',   hex:'#cbd5e1', label:'70% Signal'},
+  {name:'--text-dim',     hex:'#94a3b8', label:'40% Signal'},
+  // Border
+  {name:'--border-subtle',hex:'#1e2435', label:'Boundary'},
+  // Status
+  {name:'--success',      hex:'#4caf50', label:'Online'},
+  {name:'--warning',      hex:'#f59e0b', label:'Caution'},
+  {name:'--error',        hex:'#f97373', label:'Failure'},
+  // Original palette
+  {name:'Graphite',       hex:'#1C1D1F', label:'Ando Concrete'},
+  {name:'Muted Gold',     hex:'#C5A059', label:'Solomon Wisdom'},
+  {name:'Parchment',      hex:'#F4F1EA', label:'da Vinci Sketch'},
+  {name:'Electric White', hex:'#E0FAFF', label:'Tesla Lightning'},
+  {name:'Rebellion Red',  hex:'#D62828', label:'Banksy Disruption'},
+  // Persona signatures
+  {name:'Advisor',        hex:'#818cf8', label:'Indigo · Measured'},
+  {name:'Critic',         hex:'#f87171', label:'Coral · Blunt'},
+  {name:'Friend',         hex:'#34d399', label:'Emerald · Warmth'},
+  {name:'Comedy',         hex:'#fbbf24', label:'Amber · Levity'},
+  {name:'Scary',          hex:'#991b1b', label:'Crimson · Dominant'},
+  {name:'Scared',         hex:'#a3e635', label:'Lime · Timid'},
+  {name:'Alien',          hex:'#06b6d4', label:'Cyan · Inhuman'},
 ];
 
-let currentPanel = 0;
+// ── PANEL CONTENT ─────────────────────────────────────────────
+const sections = [
+  {
+    title: 'CORE PRINCIPLE',
+    content: `<p><strong>"Sacred Geometry meets Rebellious Intelligence."</strong></p>
+<p>Built on calculated tension between nine pillars:</p>
+<p>
+  <span class="tag tag-gold">Solomon</span> Sovereign wisdom, absolute judgment, unyielding symmetry<br>
+  <span class="tag tag-blue">Escher</span> Perspective shifts, structural paradox, recursive loops<br>
+  <span class="tag tag-gold">Ando</span> Heavy concrete, raw voids, mastery over light and shadow<br>
+  <span class="tag tag-blue">Tesla</span> High-voltage current, precise schematics, branching energy<br>
+  <span class="tag tag-red">Banksy</span> Raw texture, unpolished honesty, intentional rule-breaking<br>
+  <span class="tag tag-gold">da Vinci</span> Anatomical linework, foundational sketchwork, ground-up mastery<br>
+  <span class="tag tag-prism">Pink Floyd</span> Prism refractions, slow drifting focus, ambient depths<br>
+  <span class="tag tag-blue">Ender Wiggin</span> Cold calculation, macroscopic spatial awareness, macro-to-micro control<br>
+  <span class="tag tag-prism">Jack Sawyer</span> Multiversal shifting, intuitive leaps, blurring physical and ethereal realities
+</p>
+<p>This is not futurism. This is timelessness with voltage.</p>`
+  },
+  {
+    title: 'VISUAL LANGUAGE',
+    content: `<p><strong>Geometry:</strong> Escher paradoxes, Solomon symmetry, da Vinci linework, Ando voids, Tesla branching electricity.</p>
+<p><strong>Guiding Law:</strong> If a layout is perfectly symmetrical, it must contain a subtle impossible geometric axis to disrupt total comfort.</p>
+<p><strong>Texture:</strong> Raw concrete. Ink on parchment. Brushed metal. Static electricity grain. Spray-paint at edge boundaries. Prism chromatic aberrations.</p>
+<p><strong>Guiding Law:</strong> Surfaces should feel like they have survived multiple timelines. No hyper-glossy trends. No flat vector sterilization.</p>
+<p><strong>Motion Laws:</strong><br>
+— Ando: long, heavy, meditative fades<br>
+— Tesla: instantaneous single-frame bursts<br>
+— Escher: infinite, seamless looping paths<br>
+— Pink Floyd: slow-drifting gradient backdrops</p>
+<p><strong>Guiding Law:</strong> Motion must feel like the interface is thinking — balancing deep contemplation with lightning-fast execution.</p>`
+  },
+  {
+    title: 'TYPOGRAPHIC MANIFESTO',
+    content: `<p><strong>Sovereign Typeface (Solomon/Ando):</strong> High-contrast brutalist structural serif or heavy geometric sans-serif. For headers, structural anchors, high-level declarations.</p>
+<p><strong>Schematic Typeface (Tesla/da Vinci):</strong> Precise, zero-fluff monospace. For data, operational metrics, system states, edge-case readouts.</p>
+<p><strong>Anarchy Cut (Banksy):</strong> Breaks the layout grid — intentional kerning collisions, slight vertical offsets, raw strikethroughs to signal a system exposing truth by breaking its own rules.</p>
+<p><strong>Implementation (SDOA v4):</strong></p>
+<pre>sans: system-ui, Segoe UI
+mono: "JetBrains Mono", Menlo
 
+11px → micro labels, timestamps
+13px → secondary text, captions
+14px → primary body / messages
+18px → section titles
+22px → primary declarations
+
+700 + uppercase + 0.1em → sovereign marks
+800 → wordmarks, empty state titles</pre>`
+  },
+  {
+    title: 'DESIGN DOCTRINE',
+    content: `<p><strong>"Clarity born from contradiction."</strong></p>
+<p>The interface is alive but disciplined; rebellious but purposeful; deeply wise but never rigid. Rejects standard UX hand-holding.</p>
+<p><strong>The Ten Commandments:</strong></p>
+<p>
+  1. Judge <em>with</em> the user, not for them<br>
+  2. Silence is a feature — whitespace is sacred<br>
+  3. Complexity must be beautiful<br>
+  4. Every interaction reveals a hidden layer<br>
+  5. Rebellion must have purpose<br>
+  6. Geometry guides the mind<br>
+  7. Electricity is the pulse of interaction<br>
+  8. The system must feel like it remembers<br>
+  9. Build sanctuaries and workshops<br>
+  10. Every pixel must serve the myth
+</p>`
+  },
+  {
+    title: 'MICRO-BEHAVIORS',
+    content: `<p><strong>The Kinetic Cycle:</strong></p>
+<pre>Ando Void ──▶ Tesla Arc ──▶ Solomon Snap</pre>
+<p><strong>The Horizon Hover:</strong> Hovering an interactive anchor projects an asymmetrical shadow + single-pixel alignment wireframe shooting to viewport edges — contextualizing within global coordinates.</p>
+<p><strong>The Kinetic Snap:</strong> Two-stage deceleration — heavy meditative deceleration that finishes with an instantaneous, crisp mechanical snap at the final millisecond.</p>
+<p><strong>The Ghost Trace:</strong> In complex data views, interactive elements leave a faint single-pixel geometric trace pattern lingering for exactly 200ms — exposing the path of user intention.</p>
+<p><strong>SDOA v4 easing:</strong> <code>cubic-bezier(0.4,0,0.2,1)</code></p>
+<pre>fast:   120ms ← micro-interactions
+normal: 180ms ← component transitions
+slow:   300ms ← spatial transitions</pre>`
+  },
+  {
+    title: 'INTERACTION MODES',
+    content: `<p><strong>Five operational modes</strong> shift typography, accents, color priority, and response timing:</p>
+<p><span class="tag tag-gold">Insight</span> Solomon — Gold, slow, authoritative. Critical decisions.</p>
+<p><span class="tag tag-blue">Innovation</span> Tesla + da Vinci — Blue, hyper-fast, schematic. Building, generating.</p>
+<p><span class="tag tag-gold">Paradox</span> Escher — Shifting isometric lines, variable perspectives. Structural debugging.</p>
+<p><span class="tag tag-red">Rebellion</span> Banksy — Red accents, spray grain, broken grids. System failures, unvarnished truth.</p>
+<p><span class="tag tag-prism">Dream</span> Pink Floyd + Sawyer — Soft prism gradients, borderless containers. Onboarding, idle, deep focus.</p>
+<p><strong>Transition Flows:</strong><br>
+Insight → Rebellion: gold fractures via static flash into raw red<br>
+Innovation → Dream: electric lines bleed into prism gradients<br>
+Paradox → Insight: grids abruptly lock into a single golden-ratio line</p>`
+  },
+  {
+    title: 'SYMBOLISM',
+    content: `<p><strong>The Seal of Insight:</strong> A hybrid sigil combining Solomon's star, Escher's impossible triangle, Tesla's coil, a Banksy spray-streak, and a Renaissance compass.</p>
+<p><strong>The Dream-Engine Motif:</strong> A recurring UI theme — an intricate multi-layered machine framework behaving as though dreaming in impossible non-Euclidean geometry.</p>
+<p><strong>The Paradox Grid:</strong> A shifting responsive UI grid that subtly modifies its perspective vector as the user interacts. Reminder: reality is entirely negotiable.</p>
+<p><strong>Auditory DNA:</strong></p>
+<pre>~40Hz Low Hum   → System idle (Ando)
+arc Click        → User action (Tesla)
+bronze Chime     → System insight (Solomon)
+glitch Clip      → System alert (Banksy)</pre>`
+  },
+  {
+    title: 'ARTIFACTS',
+    content: `<p><strong>The Monolithic Input:</strong> Zero rounded boxes. A single-pixel Graphite baseline, anchored left by a sharp geometric Muted Gold glyph. On focus: instantly transitions to high-frequency Electric Blue waveform.</p>
+<p><strong>The Judgment Matrix (data table):</strong> Zero vertical grid lines. Data partitioned strictly via expansive structural whitespace. Rows bounded by 0.5px horizontal parchment-beige rules. Hover: row drops asymmetric shadow — physically floating into 3D workspace.</p>
+<p><strong>The Truth-Revealing Modal:</strong> Zero fade-ins. Stark Parchment Beige box snaps onto display over absolute black. Border: intentional, uneven spray-grain texture in Rebellion Red. Background interface loses all lighting — transforms to flat 2D wireframes until exception is resolved.</p>`
+  },
+  {
+    title: 'PERSONALITY',
+    content: `<p><strong>Tonal Frequency:</strong> Calm, surgically precise, deeply curious, occasionally irreverent, unyielding drive for insight.</p>
+<p>Speaks like an elite architect who has seen systems rise and fall — absolute candor, no filler, implicit respect for user intelligence.</p>
+<p><strong>The Nine Archetypes:</strong></p>
+<p>
+  <span style="color:#818cf8">Advisor</span> · Patient Mentor · Nemotron-3-120b<br>
+  <span style="color:#f87171">Critic</span> · Truth Engine · Sonar-Reasoning<br>
+  <span style="color:#34d399">Friend</span> · Safe Anchor · Gpt-oss-20b<br>
+  <span style="color:#fbbf24">Comedy</span> · Chaos Agent · Unfiltered<br>
+  <span style="color:#991b1b">Scary</span> · Dark Force · High-weight voice<br>
+  <span style="color:#a3e635">Scared</span> · Nervous Energy · Lime static<br>
+  <span style="color:#06b6d4;font-family:monospace">Alien</span> · Non-Human · Cyan monospace<br>
+  <span style="color:#f472b6">Artistic</span> · Creative Savant · Vision models<br>
+  <span style="color:#C5A059">Strategist</span> · Ruthless Precision · Nemotron-Super
+</p>`
+  },
+  {
+    title: 'PROTOAI — TOKEN LAYER',
+    content: `<p>ProtoAI (SDOA v4) is the canonical production implementation. Symbolic principles resolve to exact CSS custom properties with strict semantic layering.</p>
+<p><strong>Background Depth Scale:</strong></p>
+<pre>--bg-deep:       #020617  ← void anchor
+--bg:            #05060a  ← base shell
+--bg-elevated:   #0c0f17  ← panel lift 1
+--bg-elevated-2: #111623  ← panel lift 2
+--bg-surface:    #1a1a2e  ← surface layer
+--bg-layer: rgba(15,23,42,0.9) ← overlay</pre>
+<p><strong>Accent Voltage:</strong></p>
+<pre>--accent:       #4f8cff
+--accent-strong:#7dd3fc
+--accent-soft:  rgba(79,140,255,0.15)
+--accent-dim:   rgba(79,140,255,0.08)</pre>
+<p><strong>Border Taxonomy:</strong></p>
+<pre>--border-subtle: #1e2435
+--border-mid:    rgba(148,163,184,0.15)
+--border-active: rgba(59,130,246,0.6)</pre>`
+  },
+  {
+    title: 'PROTOAI — TYPOGRAPHY',
+    content: `<p><strong>Font Stacks:</strong></p>
+<pre>Sovereign (sans):
+  system-ui, -apple-system,
+  BlinkMacSystemFont, "Segoe UI"
+
+Schematic (mono):
+  "JetBrains Mono", ui-monospace,
+  SFMono-Regular, Menlo, Monaco</pre>
+<p><strong>Scale (absolute px — precision over relativity):</strong></p>
+<pre>11px → micro labels, timestamps, status
+13px → secondary text, captions, readouts
+14px → primary body / chat messages
+16px → elevated body
+18px → sidebar headers, section titles
+22px → empty state headers, declarations</pre>
+<p><strong>Weight doctrine:</strong></p>
+<pre>500 → labels, input text (baseline)
+600 → sidebar section titles
+700 → uppercase section anchors
+800 → primary wordmarks (sovereignty)</pre>`
+  },
+  {
+    title: 'PROTOAI — LAYOUT',
+    content: `<p><strong>Three-Column AppShell Grid:</strong></p>
+<pre>aside(320px) | main(1fr) | aside(220px)
+grid-template-rows: 100vh</pre>
+<p><strong>Split Modes (workshop / sanctuary):</strong></p>
+<pre>Default:      grid-cols: 1fr
+Vertical:     grid-cols: 1.2fr 0.8fr
+Horizontal:   grid-rows: 1fr 0.8fr
+Toggle:       Ctrl+/</pre>
+<p><strong>Header Bar:</strong> 48px fixed. <code>backdrop-filter: blur(12px)</code>. Background <code>rgba(5,6,10,0.8)</code> — near-transparent concrete reveal.</p>
+<p><strong>The Resizer:</strong> 6px zone. Transparent at rest. On hover: bleeds <code>var(--accent)</code> at opacity 0.3 — Tesla arc made draggable. Full body enters <code>resizing</code> state: pointer events disabled everywhere except the resizer.</p>`
+  },
+  {
+    title: 'PROTOAI — MESSAGES',
+    content: `<p><strong>User message:</strong></p>
+<pre>bg: gradient(135deg, #1e293b, #0f172a)
+border: 1px solid rgba(255,255,255,0.08)
+align: flex-end (right-anchored)
+tail: border-bottom-right-radius: 4px</pre>
+<p><strong>Assistant message:</strong></p>
+<pre>bg: gradient(135deg,
+    rgba(30,41,59,0.4),
+    rgba(2,6,23,0.8))
+border: 1px solid rgba(59,130,246,0.25)
+align: flex-start (left-anchored)
+tail: border-bottom-left-radius: 4px
+shadow: 0 10px 40px -10px rgba(0,0,0,0.5)
+      + 0 0 20px -5px rgba(59,130,246,0.1)</pre>
+<p><strong>Labels:</strong> <code>10px / 700 / uppercase / 0.12em / 50% opacity</code><br>
+User: <code>#7dd3fc</code> · Assistant: <code>#fff</code></p>`
+  },
+  {
+    title: 'PROTOAI — PERSONAS',
+    content: `<p>Each archetype radiates a distinct electromagnetic signature via border color + ambient halo (<code>box-shadow: 0 0 20px -5px [color, 0.15]</code>):</p>
+<pre>Advisor: rgba(129,140,248,0.45) Indigo
+         italic (measured, philosophical)
+Critic:  rgba(248,113,113,0.45) Coral
+         500-weight (blunt, no softening)
+Friend:  rgba(52,211,153,0.45)  Emerald
+         neutral warmth
+Comedy:  rgba(251,191,36,0.45)  Amber
+         italic (levity)
+Scary:   rgba(153,27,27,0.45)   Crimson
+         800-weight (dominance)
+Scared:  rgba(163,230,53,0.45)  Lime
+         italic, opacity 0.8 (timid)
+Alien:   rgba(6,182,212,0.45)   Cyan
+         monospace font (inhuman)</pre>`
+  },
+  {
+    title: 'PROTOAI — MOTION',
+    content: `<p><strong>Named keyframes:</strong></p>
+<pre>sdoa-fade-in:
+  opacity:0 + translateY(10px) → 1/0
+  ↑ Natural content arrival
+
+pulse-dot:
+  scale 1→1.1, opacity 1→0.6
+  1.5s infinite ← system heartbeat
+
+pt-thinking-pulse:
+  scale 0.8/opacity 0.3 → 1.3/opacity 1
+  1.2s infinite ← Tesla coil breathing
+
+sdoa-button-spin:
+  rotate 360° / 0.6s linear ← load rotor</pre>
+<p><strong>Kinetic Snap:</strong> Two-stage deceleration — heavy meditative decel that finishes with an instantaneous crisp mechanical snap at the final millisecond. No standard bezier. No linear. The machine lands.</p>`
+  },
+  {
+    title: 'PROTOAI — COMPONENTS',
+    content: `<p><strong>Focus Ring (universal):</strong> <code>0 0 0 1px rgba(59,130,246,0.6)</code> — the Tesla arc applied to all interactive focus states.</p>
+<p><strong>The Chip:</strong> <code>4px 10px / 999px radius</code>. Muted at rest. Electrifies on contact: accent-soft bg → accent-strong text → accent border.</p>
+<p><strong>Scrollbars:</strong> 5px wide, transparent track, <code>border-subtle</code> thumb. Infrastructure visible only when needed.</p>
+<p><strong>Scroll Map:</strong> 8px right-edge strip. Message segments as colored ticks:</p>
+<pre>user:      rgba(99,179,237,0.7)  light blue
+assistant: rgba(79,140,255,0.55) electric
+error:     rgba(249,115,115,0.7) red cut
+system:    rgba(148,163,184,0.4) wire</pre>
+<p><strong>Partner Ticker:</strong> 28px height, <code>backdrop-filter: blur(10px)</code>. The system's nervous system exposed — raw operational truth at minimal footprint.</p>`
+  },
+  {
+    title: 'PROTOAI — SPACING & Z',
+    content: `<p><strong>Spacing Scale (sacred intervals):</strong></p>
+<pre>2px  → micro gap (icon+text)
+4px  → tight gap (button padding)
+8px  → standard gap (chip padding)
+16px → module padding, breathing room
+24px → between messages, major gaps
+32px → large void
+48px → maximum structural void (Ando)</pre>
+<p><strong>Z-Index Strata (dimensional order):</strong></p>
+<pre>100 → dropdowns, context menus
+200 → modals, full-screen interrupts
+300 → toasts, ephemeral notifications
+400 → tooltips, absolute-priority info</pre>
+<p><strong>Shadow Scale:</strong></p>
+<pre>sm:   0 1px 3px  rgba(0,0,0,0.3)
+md:   0 4px 12px rgba(0,0,0,0.4)
+lg:   0 8px 24px rgba(0,0,0,0.5)
+soft: 0 12px 30px rgba(0,0,0,0.45)
+glow: 0 0 0 1px rgba(59,130,246,0.6)</pre>`
+  }
+];
+
+// ── RENDER TOKENS ──────────────────────────────────────────────
+function renderTokens() {
+  const grid = document.getElementById('tokenGrid');
+  tokens.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'swatch';
+    el.innerHTML = `<div class="swatch-color" style="background:${t.hex}"></div>
+      <div class="swatch-label"><span class="swatch-name">${t.name}</span>${t.hex} · ${t.label}</div>`;
+    grid.appendChild(el);
+  });
+}
+
+// ── RENDER PANELS ──────────────────────────────────────────────
 function renderPanels() {
   const container = document.getElementById('panels');
   container.innerHTML = '';
   sections.forEach((sec, i) => {
     const div = document.createElement('div');
-    div.className = 'panel';
-    div.innerHTML = `<h3>${sec.title}</h3><p>${sec.content}</p>`;
-    if(i===0) div.classList.add('active');
+    div.className = 'panel' + (i === 0 ? ' active' : '');
+    div.innerHTML = `<h3>${sec.title}</h3>${sec.content}`;
     container.appendChild(div);
   });
+  updateCounter();
+}
+
+function updateCounter() {
+  const el = document.getElementById('panelCounter');
+  if(el) el.textContent = `Panel ${currentPanel + 1} / ${sections.length}`;
 }
 
 function showPanel(index) {
-  document.querySelectorAll('.panel').forEach((p,i) => {
-    p.classList.toggle('active', i===index);
-  });
+  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === index));
   currentPanel = index;
+  updateCounter();
 }
 
-document.getElementById('next').addEventListener('click', () => {
-  let next = currentPanel + 1;
-  if(next >= sections.length) next = 0;
-  showPanel(next);
+document.getElementById('next').addEventListener('click', () => showPanel((currentPanel + 1) % sections.length));
+document.getElementById('prev').addEventListener('click', () => showPanel((currentPanel - 1 + sections.length) % sections.length));
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown') showPanel((currentPanel + 1) % sections.length);
+  if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   showPanel((currentPanel - 1 + sections.length) % sections.length);
 });
 
-document.getElementById('prev').addEventListener('click', () => {
-  let prev = currentPanel - 1;
-  if(prev < 0) prev = sections.length-1;
-  showPanel(prev);
-});
-
+// ── MODE SWITCHING ─────────────────────────────────────────────
 function setMode(mode) {
   document.body.classList.remove('insight-mode','innovation-mode','paradox-mode','rebellion-mode','dream-mode');
-  document.body.classList.add(mode+'-mode');
+  document.body.classList.add(mode + '-mode');
   currentMode = mode;
-  try{localStorage.setItem('aestheticMode',mode);}catch(e){}
+  document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+  try { localStorage.setItem('aestheticMode', mode); } catch(e) {}
 }
 
-document.querySelectorAll('[data-mode]').forEach(btn=>{
-  btn.addEventListener('click',()=> setMode(btn.dataset.mode));
-});
+document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
 
+// ── INIT ───────────────────────────────────────────────────────
+renderTokens();
 renderPanels();
 setMode(currentMode);
 </script>
