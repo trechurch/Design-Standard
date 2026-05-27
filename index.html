@@ -361,6 +361,23 @@ h1 {
 }
 .chip-ghost-trace { animation: chip-ghost-trace 240ms ease-out forwards; }
 
+/* === MUTE TOGGLE === */
+.header-controls { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.mute-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  padding: 5px 9px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+}
+.mute-btn:hover { color: var(--text); border-color: var(--border-mid); }
+.mute-btn.muted { opacity: 0.35; }
+
 /* === STATUS DOTS === */
 .status-col { display: flex; flex-direction: column; gap: var(--space-sm); }
 .status-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); }
@@ -845,9 +862,12 @@ h1 {
     <div id="main-header">
       <h1>THE AESTHETIC STANDARD</h1>
       <div class="tagline">v2.0.0 Production-Ready · Sacred Geometry meets Rebellious Intelligence · ProtoAI SDOA v4</div>
-      <button class="readme-trigger" id="readmeBtn" aria-label="Open full specification">
-        <span class="trigger-icon">🜅</span> Full Specification
-      </button>
+      <div class="header-controls">
+        <button class="readme-trigger" id="readmeBtn" aria-label="Open full specification">
+          <span class="trigger-icon">🜅</span> Full Specification
+        </button>
+        <button class="mute-btn" id="muteBtn" title="Toggle sound" aria-label="Toggle sound">♪</button>
+      </div>
     </div>
 
     <div class="mode-bar">
@@ -1336,6 +1356,198 @@ renderTokens();
 renderPanels();
 setMode(currentMode);
 
+// ── TONAL FREQUENCY ENGINE ─────────────────────────────────────
+// Web Audio API — lazy-init on first gesture (browser autoplay policy)
+
+let _ac        = null;
+let _humGain   = null;
+let _humOscs   = [];
+let _humReady  = false;
+let _audioMuted = false;
+
+function getAC() {
+  if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (_ac.state === 'suspended') _ac.resume();
+  return _ac;
+}
+
+// ── THE LOW HUM — ~40Hz resonant drone (Ando: air through massive concrete chamber)
+// Created once on first approach; thereafter only the gain is ramped.
+function _initHum() {
+  if (_humReady) return;
+  _humReady = true;
+  const ac = getAC();
+  _humGain = ac.createGain();
+  _humGain.gain.value = 0;
+  _humGain.connect(ac.destination);
+  // Fundamental 40Hz + 2nd/3rd harmonics, each with a slow LFO for organic breathing quality
+  [40, 80, 121].forEach((freq, i) => {
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const g = ac.createGain();
+    g.gain.value = 0.38 / (i + 1);
+    // Slow LFO on pitch — 0.08Hz creates ~12-second "breath" cycle
+    const lfo = ac.createOscillator();
+    lfo.frequency.value = 0.07 + i * 0.025;
+    const lfoG = ac.createGain();
+    lfoG.gain.value = 0.28;
+    lfo.connect(lfoG); lfoG.connect(osc.frequency);
+    lfo.start(); osc.start();
+    osc.connect(g); g.connect(_humGain);
+    _humOscs.push(osc, lfo);
+  });
+}
+
+function humIn() {
+  if (_audioMuted) return;
+  _initHum();
+  const ac = getAC();
+  _humGain.gain.cancelScheduledValues(ac.currentTime);
+  _humGain.gain.setValueAtTime(_humGain.gain.value, ac.currentTime);
+  _humGain.gain.linearRampToValueAtTime(0.048, ac.currentTime + 1.8);
+}
+
+function humOut() {
+  if (!_humGain || !_ac) return;
+  _humGain.gain.cancelScheduledValues(_ac.currentTime);
+  _humGain.gain.setValueAtTime(_humGain.gain.value, _ac.currentTime);
+  _humGain.gain.linearRampToValueAtTime(0, _ac.currentTime + 1.4);
+}
+
+// ── THE ARC CLICK — Tesla: crisp high-voltage mechanical snap
+function playArcClick(intensity = 1) {
+  if (_audioMuted) return;
+  const ac = getAC();
+  // White noise burst with steep exponential decay
+  const dur    = 0.055;
+  const bufLen = Math.floor(ac.sampleRate * dur);
+  const buf    = ac.createBuffer(1, bufLen, ac.sampleRate);
+  const data   = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++)
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 5);
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const hp = ac.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 1800;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.42 * intensity, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  // Tonal snap component — brief high-freq sine for the "crack"
+  const snap = ac.createOscillator();
+  snap.frequency.value = 6800 + Math.random() * 2400;
+  const sg = ac.createGain();
+  sg.gain.setValueAtTime(0.14 * intensity, ac.currentTime);
+  sg.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.022);
+  src.connect(hp); hp.connect(g); g.connect(ac.destination);
+  snap.connect(sg); sg.connect(ac.destination);
+  src.start(); snap.start(); snap.stop(ac.currentTime + 0.03);
+}
+
+// ── THE REVEAL — Solomon: deep resonant bronze chime, decays for several seconds
+function playReveal() {
+  if (_audioMuted) return;
+  const ac = getAC();
+  // Inharmonic bronze bell partials — real bronze ~ratio table
+  const partials = [
+    { ratio: 1.00, amp: 0.17, decay: 4.0 },
+    { ratio: 1.33, amp: 0.11, decay: 2.8 },
+    { ratio: 1.87, amp: 0.08, decay: 2.0 },
+    { ratio: 2.76, amp: 0.05, decay: 1.3 },
+    { ratio: 4.12, amp: 0.03, decay: 0.8 },
+  ];
+  const fund = 82; // deep bronze fundamental
+  partials.forEach(p => {
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = fund * p.ratio;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0, ac.currentTime);
+    g.gain.linearRampToValueAtTime(p.amp, ac.currentTime + 0.004); // instant attack
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + p.decay);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(); osc.stop(ac.currentTime + p.decay + 0.1);
+  });
+}
+
+// ── THE GLITCH CLIP — Banksy: low-fidelity analog slice, then silence
+function playGlitchClip() {
+  if (_audioMuted) return;
+  const ac = getAC();
+  const dur    = 0.072;
+  const bufLen = Math.floor(ac.sampleRate * dur);
+  const buf    = ac.createBuffer(1, bufLen, ac.sampleRate);
+  const data   = buf.getChannelData(0);
+  const crush  = 3; // 3-bit crush — the filth IS the statement
+  for (let i = 0; i < bufLen; i++) {
+    const raw = Math.random() * 2 - 1;
+    data[i]   = Math.round(raw * crush) / crush;
+  }
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 760; bp.Q.value = 0.4;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.5, ac.currentTime);
+  g.gain.linearRampToValueAtTime(0, ac.currentTime + dur);
+  src.connect(bp); bp.connect(g); g.connect(ac.destination);
+  src.start();
+}
+
+// ── DREAM — Pink Floyd: soft rising harmonic sweep, reality loosens
+function playDream() {
+  if (_audioMuted) return;
+  const ac = getAC();
+  [220, 330, 550].forEach((f, i) => {
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f,         ac.currentTime + i * 0.28);
+    osc.frequency.linearRampToValueAtTime(f * 1.09, ac.currentTime + i * 0.28 + 2.5);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0,                ac.currentTime + i * 0.28);
+    g.gain.linearRampToValueAtTime(0.07 / (i + 1), ac.currentTime + i * 0.28 + 0.55);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 3.8);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(ac.currentTime + i * 0.28);
+    osc.stop(ac.currentTime + 4);
+  });
+}
+
+// ── VFS — rapid terminal beep sequence (matrix acknowledge)
+function playVFS() {
+  if (_audioMuted) return;
+  const ac = getAC();
+  [0, 0.055, 0.105, 0.16, 0.205, 0.255].forEach((delay, i) => {
+    const osc = ac.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = 880 + (i % 3) * 220;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.055, ac.currentTime + delay);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + delay + 0.038);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(ac.currentTime + delay);
+    osc.stop(ac.currentTime + delay + 0.045);
+  });
+}
+
+// Paradox — two worlds collide with a brief pause between
+function playParadox() {
+  if (_audioMuted) return;
+  playArcClick(0.55);
+  setTimeout(playReveal, 360);
+}
+
+// ── Chip → sound mapping (keys match chipData.fxKey)
+const chipSoundMap = {
+  insight:    playReveal,
+  innovation: () => playArcClick(1.15),
+  paradox:    playParadox,
+  rebellion:  playGlitchClip,
+  dream:      playDream,
+  vfs:        playVFS,
+  sdoa:       playReveal
+};
+
 // ── CHIP FX ENGINE ─────────────────────────────────────────────
 
 // 1. Fullscreen canvas overlay (pointer-events:none so clicks pass through)
@@ -1751,35 +1963,62 @@ document.querySelectorAll('.chip').forEach(chip => {
     kineticSnap(chip);
     ghostTrace(chip);
     FX[data.fxKey](cx, cy, performance.now());
+    if (chipSoundMap[data.fxKey]) chipSoundMap[data.fxKey]();
     setTimeout(stopFx, fxDurations[data.fxKey] + 200);
   });
 });
 
+// ── Low Hum: fades in when user approaches the chip row
+const _chipRow = document.querySelector('.chip-row');
+if (_chipRow) {
+  _chipRow.addEventListener('mouseenter', humIn);
+  _chipRow.addEventListener('mouseleave',  humOut);
+}
+
+// ── Mode buttons: Arc Click on every switch
+document.querySelectorAll('.mode-btn').forEach(btn =>
+  btn.addEventListener('click', () => playArcClick(0.82))
+);
+
+// ── Mute toggle
+document.getElementById('muteBtn').addEventListener('click', () => {
+  _audioMuted = !_audioMuted;
+  const btn = document.getElementById('muteBtn');
+  btn.classList.toggle('muted', _audioMuted);
+  btn.textContent = _audioMuted ? '♪̶' : '♪';
+  btn.title = _audioMuted ? 'Unmute sound' : 'Mute sound';
+  if (_audioMuted) humOut();
+});
+
 // ── README MODAL ───────────────────────────────────────────────
-const README_URL = 'https://raw.githubusercontent.com/trechurch/Design-Standard/main/README.md';
+// NOTE: The modal HTML is injected AFTER this <script> block in the DOM,
+// so getElementById calls for those elements return null at parse time.
+// All modal element lookups are therefore lazy — called only at event time.
 
-const backdrop  = document.getElementById('readmeBackdrop');
-const closeBtn  = document.getElementById('readmeClose');
-const bodyEl    = document.getElementById('readmeBody');
-const readmeBtn = document.getElementById('readmeBtn');
-
-let readmeCache = null;
+const README_URL  = 'https://raw.githubusercontent.com/trechurch/Design-Standard/main/README.md';
+let readmeCache   = null;
 let readmeFetching = false;
 
+const $bd    = () => document.getElementById('readmeBackdrop');
+const $close = () => document.getElementById('readmeClose');
+const $body  = () => document.getElementById('readmeBody');
+
 function openReadme() {
-  backdrop.classList.add('open');
+  playReveal(); // The Reveal — system insight sound
+  $bd().classList.add('open');
   document.body.style.overflow = 'hidden';
   if (!readmeCache && !readmeFetching) fetchReadme();
 }
 
 function closeReadme() {
-  backdrop.classList.remove('open');
+  playArcClick(0.6);
+  $bd().classList.remove('open');
   document.body.style.overflow = '';
 }
 
 async function fetchReadme() {
   readmeFetching = true;
-  bodyEl.innerHTML = `
+  $body().innerHTML = `
     <div class="readme-loading">
       <div class="readme-loading-dot"></div>
       Fetching specification…
@@ -1791,7 +2030,8 @@ async function fetchReadme() {
     readmeCache = text;
     renderReadme(text);
   } catch(err) {
-    bodyEl.innerHTML = `
+    playGlitchClip();
+    $body().innerHTML = `
       <div class="readme-loading" style="color:var(--color-error)">
         <div class="readme-loading-dot" style="background:var(--color-error)"></div>
         Failed to load — ${err.message}
@@ -1805,20 +2045,26 @@ function renderReadme(markdown) {
   const div = document.createElement('div');
   div.className = 'readme-content';
   div.innerHTML = marked.parse(markdown, { gfm: true, breaks: false });
-  bodyEl.innerHTML = '';
-  bodyEl.appendChild(div);
+  $body().innerHTML = '';
+  $body().appendChild(div);
 }
 
-// Wire triggers
-readmeBtn.addEventListener('click', openReadme);
-closeBtn.addEventListener('click', closeReadme);
-backdrop.addEventListener('click', e => { if (e.target === backdrop) closeReadme(); });
+// readmeBtn is above this script in the DOM — safe to bind immediately
+document.getElementById('readmeBtn').addEventListener('click', openReadme);
+
+// All other modal elements are below this script — bind after DOM is complete
+document.addEventListener('DOMContentLoaded', () => {
+  $close().addEventListener('click', closeReadme);
+  $bd().addEventListener('click', e => { if (e.target === $bd()) closeReadme(); });
+});
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && backdrop.classList.contains('open')) closeReadme();
-  // keep arrow nav only when modal is closed
-  if (backdrop.classList.contains('open')) return;
-  if(e.key === 'ArrowRight' || e.key === 'ArrowDown') showPanel((currentPanel + 1) % sections.length);
-  if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   showPanel((currentPanel - 1 + sections.length) % sections.length);
+  const bd     = $bd();
+  const isOpen = bd && bd.classList.contains('open');
+  if (e.key === 'Escape' && isOpen) { closeReadme(); return; }
+  if (isOpen) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showPanel((currentPanel + 1) % sections.length);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   showPanel((currentPanel - 1 + sections.length) % sections.length);
 });
 </script>
 
