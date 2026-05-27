@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -354,6 +354,12 @@ h1 {
   transition: all var(--fast) var(--ease);
 }
 .chip:hover { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent); }
+
+@keyframes chip-ghost-trace {
+  0%   { box-shadow: 0 0 0 3px rgba(79,140,255,0.75); }
+  100% { box-shadow: 0 0 0 22px rgba(79,140,255,0); }
+}
+.chip-ghost-trace { animation: chip-ghost-trace 240ms ease-out forwards; }
 
 /* === STATUS DOTS === */
 .status-col { display: flex; flex-direction: column; gap: var(--space-sm); }
@@ -1330,6 +1336,425 @@ renderTokens();
 renderPanels();
 setMode(currentMode);
 
+// ── CHIP FX ENGINE ─────────────────────────────────────────────
+
+// 1. Fullscreen canvas overlay (pointer-events:none so clicks pass through)
+const fxCanvas = document.createElement('canvas');
+fxCanvas.id = 'fx-canvas';
+fxCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:9998;pointer-events:none;';
+document.body.appendChild(fxCanvas);
+const fxCtx = fxCanvas.getContext('2d');
+let fxRaf   = null;
+
+function resizeFxCanvas() { fxCanvas.width = window.innerWidth; fxCanvas.height = window.innerHeight; }
+resizeFxCanvas();
+window.addEventListener('resize', resizeFxCanvas);
+
+function stopFx() {
+  if (fxRaf) { cancelAnimationFrame(fxRaf); fxRaf = null; }
+  fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+}
+
+// 2. Horizon hover — 1px lines extending to viewport edges, per-chip tint
+const hH = document.createElement('div');
+const hV = document.createElement('div');
+const _hb = 'position:fixed;pointer-events:none;z-index:9997;transition:opacity 0.18s ease,background 0.18s ease;opacity:0;';
+hH.style.cssText = _hb + 'left:0;right:0;height:1px;';
+hV.style.cssText = _hb + 'top:0;bottom:0;width:1px;';
+document.body.appendChild(hH);
+document.body.appendChild(hV);
+
+function showHorizon(chip, color) {
+  const r = chip.getBoundingClientRect();
+  hH.style.top        = (r.top  + r.height / 2) + 'px';
+  hV.style.left       = (r.left + r.width  / 2) + 'px';
+  hH.style.background = color;
+  hV.style.background = color;
+  hH.style.opacity    = '0.65';
+  hV.style.opacity    = '0.65';
+}
+function hideHorizon() { hH.style.opacity = '0'; hV.style.opacity = '0'; }
+
+// 3. Ghost trace — CSS ripple from chip edges (200ms)
+function ghostTrace(chip) {
+  chip.classList.remove('chip-ghost-trace');
+  void chip.offsetWidth; // force reflow
+  chip.classList.add('chip-ghost-trace');
+  setTimeout(() => chip.classList.remove('chip-ghost-trace'), 280);
+}
+
+// 4. Kinetic snap — WAAPI two-stage deceleration
+function kineticSnap(chip) {
+  chip.animate([
+    { transform: 'scale(1)'   },
+    { transform: 'scale(1.24)', offset: 0.14 },
+    { transform: 'scale(0.92)', offset: 0.44 },
+    { transform: 'scale(1.07)', offset: 0.68 },
+    { transform: 'scale(1)'   }
+  ], { duration: 520, easing: 'cubic-bezier(0.22,1,0.36,1)', fill: 'none' });
+}
+
+// 5. Per-chip FX canvas implementations
+const FX = {
+
+  // ── INSIGHT — Solomon's Sacred Geometry: slow hexagonal mandala, Ando-paced gold
+  insight(cx, cy, t0) {
+    const dur = 3200;
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const alpha = prog < 0.8 ? 0.55 : 0.55 * (1 - (prog - 0.8) / 0.2);
+      // Concentric rings of hexagons rotating in alternating directions
+      for (let layer = 1; layer <= 3; layer++) {
+        const R     = layer * 52;
+        const count = layer * 6;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + prog * Math.PI * (layer % 2 ? -0.4 : 0.4);
+          const hx = cx + Math.cos(angle) * R;
+          const hy = cy + Math.sin(angle) * R;
+          const hs = 13 - layer * 2;
+          fxCtx.save();
+          fxCtx.strokeStyle = `rgba(251,191,36,${alpha * 0.6 / layer})`;
+          fxCtx.lineWidth = 1;
+          fxCtx.beginPath();
+          for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2 + prog * 1.2;
+            k === 0 ? fxCtx.moveTo(hx + Math.cos(a) * hs, hy + Math.sin(a) * hs)
+                    : fxCtx.lineTo(hx + Math.cos(a) * hs, hy + Math.sin(a) * hs);
+          }
+          fxCtx.closePath(); fxCtx.stroke(); fxCtx.restore();
+        }
+      }
+      // Star of David — two overlapping equilateral triangles
+      for (let tri = 0; tri < 2; tri++) {
+        const ba = prog * 0.8 + tri * (Math.PI / 3);
+        fxCtx.save();
+        fxCtx.strokeStyle = `rgba(251,191,36,${alpha})`;
+        fxCtx.lineWidth   = 1.5;
+        fxCtx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a = ba + (k / 3) * Math.PI * 2;
+          k === 0 ? fxCtx.moveTo(cx + Math.cos(a) * 42, cy + Math.sin(a) * 42)
+                  : fxCtx.lineTo(cx + Math.cos(a) * 42, cy + Math.sin(a) * 42);
+        }
+        fxCtx.closePath(); fxCtx.stroke(); fxCtx.restore();
+      }
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  },
+
+  // ── INNOVATION — Tesla arc: single-frame explosion, instant blue sparks
+  innovation(cx, cy, t0) {
+    const dur   = 900;
+    const sparks = Array.from({ length: 26 }, () => ({
+      angle: Math.random() * Math.PI * 2,
+      speed: 180 + Math.random() * 320,
+      jitter: (Math.random() - 0.5) * 0.85,
+      width: Math.random() * 1.6 + 0.4,
+      len: Math.random() * 0.3 + 0.2
+    }));
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const decay = prog < 0.08 ? 1 : Math.max(0, 1 - (prog - 0.08) / 0.92);
+      sparks.forEach(s => {
+        const dist = s.speed * Math.pow(prog, 0.5);
+        const a    = s.angle + s.jitter * prog * 3;
+        fxCtx.save();
+        fxCtx.strokeStyle = prog < 0.15
+          ? `rgba(255,255,255,${decay * 0.9})`
+          : `rgba(79,140,255,${decay * 0.8})`;
+        fxCtx.lineWidth = s.width * decay;
+        fxCtx.beginPath();
+        fxCtx.moveTo(cx + Math.cos(a) * dist * (1 - s.len), cy + Math.sin(a) * dist * (1 - s.len));
+        fxCtx.lineTo(cx + Math.cos(a) * dist,               cy + Math.sin(a) * dist);
+        fxCtx.stroke(); fxCtx.restore();
+      });
+      // white-hot core flash at moment of impact
+      if (prog < 0.12) {
+        fxCtx.save();
+        const g = fxCtx.createRadialGradient(cx, cy, 0, cx, cy, 65);
+        g.addColorStop(0, `rgba(255,255,255,${0.65 * (1 - prog / 0.12)})`);
+        g.addColorStop(1, 'rgba(79,140,255,0)');
+        fxCtx.fillStyle = g;
+        fxCtx.beginPath(); fxCtx.arc(cx, cy, 65, 0, Math.PI * 2); fxCtx.fill();
+        fxCtx.restore();
+      }
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  },
+
+  // ── PARADOX — Escher: infinite looping grid that continuously folds into itself
+  paradox(cx, cy, t0) {
+    const dur  = 4000;
+    const step = 40;
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const alpha = prog < 0.75 ? 0.45 : 0.45 * (1 - (prog - 0.75) / 0.25);
+      const W = fxCanvas.width, H = fxCanvas.height;
+      // Seamlessly scrolling background grid
+      const off = (prog * step * 2) % step;
+      fxCtx.save();
+      fxCtx.strokeStyle = `rgba(167,139,250,${alpha * 0.35})`;
+      fxCtx.lineWidth   = 0.5;
+      for (let x = -(off % step); x < W + step; x += step) {
+        fxCtx.beginPath(); fxCtx.moveTo(x, 0); fxCtx.lineTo(x, H); fxCtx.stroke();
+      }
+      for (let y = -(off % step); y < H + step; y += step) {
+        fxCtx.beginPath(); fxCtx.moveTo(0, y); fxCtx.lineTo(W, y); fxCtx.stroke();
+      }
+      fxCtx.restore();
+      // Impossible staircase spokes — perspective-distorted radials
+      const phase = prog * Math.PI * 6;
+      for (let i = 0; i < 8; i++) {
+        const a  = (i / 8) * Math.PI * 2 + phase * 0.15;
+        const d1 = 60 + Math.sin(phase + i)           * 30;
+        const d2 = 160 + Math.cos(phase * 0.7 + i * 1.3) * 60;
+        fxCtx.save();
+        fxCtx.strokeStyle = `rgba(167,139,250,${alpha * 0.7})`;
+        fxCtx.lineWidth   = 1;
+        fxCtx.beginPath();
+        fxCtx.moveTo(cx + Math.cos(a)            * d1, cy + Math.sin(a)            * d1);
+        fxCtx.lineTo(cx + Math.cos(a + Math.PI / 8) * d2, cy + Math.sin(a + Math.PI / 8) * d2);
+        fxCtx.stroke(); fxCtx.restore();
+      }
+      // Central recursing squares — each rotating opposite to the last
+      for (let s = 0; s < 5; s++) {
+        const sz  = 20 + s * 24 + Math.sin(phase * 0.5 + s) * 8;
+        const rot = phase * 0.12 * (s % 2 ? -1 : 1);
+        fxCtx.save();
+        fxCtx.translate(cx, cy); fxCtx.rotate(rot);
+        fxCtx.strokeStyle = `rgba(167,139,250,${alpha * (0.9 - s * 0.14)})`;
+        fxCtx.lineWidth   = 1;
+        fxCtx.strokeRect(-sz / 2, -sz / 2, sz, sz);
+        fxCtx.restore();
+      }
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  },
+
+  // ── REBELLION — Banksy: raw spray-paint splatter, violent red
+  rebellion(cx, cy, t0) {
+    const dur = 1400;
+    const pts = Array.from({ length: 220 }, () => ({
+      a:  Math.random() * Math.PI * 2,
+      d:  10 + Math.pow(Math.random(), 0.6) * 280,
+      r:  Math.random() * 4 + 1,
+      al: Math.random() * 0.8 + 0.2,
+      sp: 0.25 + Math.random() * 0.75
+    }));
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const reveal = Math.min(prog / 0.4, 1);
+      const fade   = prog > 0.6 ? 1 - (prog - 0.6) / 0.4 : 1;
+      pts.forEach(p => {
+        const ap = Math.min(1, reveal / p.sp);
+        if (ap <= 0) return;
+        const rr = 185 + Math.floor(Math.random() * 70);
+        fxCtx.save();
+        fxCtx.globalAlpha = p.al * fade * ap;
+        fxCtx.fillStyle   = `rgb(${rr},${Math.floor(Math.random() * 28)},${Math.floor(Math.random() * 28)})`;
+        fxCtx.beginPath();
+        fxCtx.arc(cx + Math.cos(p.a) * p.d * ap, cy + Math.sin(p.a) * p.d * ap, p.r * (0.5 + ap * 0.5), 0, Math.PI * 2);
+        fxCtx.fill(); fxCtx.restore();
+      });
+      // stencil mark at center
+      fxCtx.save();
+      fxCtx.globalAlpha    = Math.min(reveal * 2, 1) * fade;
+      fxCtx.fillStyle      = '#ef4444';
+      fxCtx.font           = `bold ${38 + Math.sin(prog * 22) * 3}px sans-serif`;
+      fxCtx.textAlign      = 'center';
+      fxCtx.textBaseline   = 'middle';
+      fxCtx.fillText('✕', cx, cy);
+      fxCtx.restore();
+      // paint drip
+      if (prog > 0.22) {
+        const dp = Math.min((prog - 0.22) / 0.38, 1);
+        fxCtx.save();
+        fxCtx.strokeStyle = `rgba(239,68,68,${0.75 * fade})`;
+        fxCtx.lineWidth   = 3.5;
+        fxCtx.beginPath();
+        fxCtx.moveTo(cx, cy + 24);
+        fxCtx.lineTo(cx + (Math.random() - 0.5) * 5, cy + 24 + dp * 70);
+        fxCtx.stroke(); fxCtx.restore();
+      }
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  },
+
+  // ── DREAM — Pink Floyd + Jack Sawyer: slow drifting prismatic gradients, reality dissolves
+  dream(cx, cy, t0) {
+    const dur = 5000;
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const alpha = prog < 0.7 ? 0.5 : 0.5 * (1 - (prog - 0.7) / 0.3);
+      const W = fxCanvas.width, H = fxCanvas.height;
+      // Six drifting prismatic halos, each a different hue, slowly orbiting
+      for (let i = 0; i < 6; i++) {
+        const hue = ((i / 6) * 360 + prog * 90) % 360;
+        const ox  = Math.sin(prog * Math.PI * 2 + i * 1.1) * 120;
+        const oy  = Math.cos(prog * Math.PI * 1.7 + i * 0.9) * 80;
+        const g   = fxCtx.createRadialGradient(cx + ox, cy + oy, 0, cx + ox, cy + oy, 185 + i * 20);
+        g.addColorStop(0, `hsla(${hue},80%,65%,${alpha * 0.35})`);
+        g.addColorStop(1, `hsla(${hue},80%,65%,0)`);
+        fxCtx.save(); fxCtx.fillStyle = g; fxCtx.fillRect(0, 0, W, H); fxCtx.restore();
+      }
+      // Fracturing prism triangles — rotating in opposite directions
+      for (let i = 0; i < 5; i++) {
+        const hue = ((i / 5) * 360 + prog * 60 + 180) % 360;
+        const R   = 80 + i * 18;
+        const rot = prog * Math.PI * (i % 2 ? -0.4 : 0.6) + i * 0.4;
+        fxCtx.save();
+        fxCtx.translate(cx, cy); fxCtx.rotate(rot);
+        fxCtx.strokeStyle = `hsla(${hue},80%,70%,${alpha * 0.7})`;
+        fxCtx.lineWidth   = 1;
+        fxCtx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a = (k / 3) * Math.PI * 2;
+          k === 0 ? fxCtx.moveTo(Math.cos(a) * R, Math.sin(a) * R)
+                  : fxCtx.lineTo(Math.cos(a) * R, Math.sin(a) * R);
+        }
+        fxCtx.closePath(); fxCtx.stroke(); fxCtx.restore();
+      }
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  },
+
+  // ── VFS — Virtual File System: matrix data cascade, terminal green
+  vfs(cx, cy, t0) {
+    const dur   = 2200;
+    const chars = '01ABCDEFabcdef!@#$%→←↑↓⊞⊠⬡◈'.split('');
+    const cols  = Array.from({ length: 22 }, (_, i) => ({
+      x:   cx + (i - 11) * 17,
+      y:   cy - 85 - Math.random() * 55,
+      sp:  45 + Math.random() * 85,
+      chs: Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)])
+    }));
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const fade    = prog > 0.7 ? 1 - (prog - 0.7) / 0.3 : 1;
+      const elapsed = (t - t0) / 1000;
+      cols.forEach(col => {
+        const yPos = col.y + col.sp * elapsed;
+        col.chs.forEach((ch, k) => {
+          const al = (k === 0 ? 0.9 : Math.max(0, 0.5 - k * 0.07)) * fade;
+          if (al <= 0) return;
+          fxCtx.save();
+          fxCtx.font      = `${k === 0 ? 700 : 400} 12px "JetBrains Mono",monospace`;
+          fxCtx.fillStyle = k === 0 ? `rgba(16,185,129,${al})` : `rgba(52,211,153,${al * 0.6})`;
+          fxCtx.fillText(ch, col.x, yPos + k * 16);
+          fxCtx.restore();
+        });
+        if (Math.random() < 0.06)
+          col.chs[Math.floor(Math.random() * col.chs.length)] = chars[Math.floor(Math.random() * chars.length)];
+      });
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  },
+
+  // ── SDOA v4 — The System: non-Euclidean golden-ratio Fibonacci spirals + token orbit
+  sdoa(cx, cy, t0) {
+    const dur         = 4500;
+    const PHI         = 1.618033988749895;
+    const tokenColors = ['#4f8cff','#7dd3fc','#10b981','#f59e0b','#ef4444','#818cf8','#f472b6'];
+    function loop(t) {
+      const prog = Math.min((t - t0) / dur, 1);
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+      if (prog >= 1) return;
+      const alpha = prog < 0.75 ? 0.6 : 0.6 * (1 - (prog - 0.75) / 0.25);
+      // Three Fibonacci spirals at 120° offsets
+      for (let arm = 0; arm < 3; arm++) {
+        fxCtx.save();
+        fxCtx.translate(cx, cy);
+        fxCtx.rotate((arm / 3) * Math.PI * 2 + prog * 0.5);
+        fxCtx.strokeStyle = `rgba(79,140,255,${alpha * 0.6})`;
+        fxCtx.lineWidth   = 1;
+        fxCtx.beginPath();
+        let r = 4;
+        for (let i = 0; i < 200; i++) {
+          const a = i * 0.16 + prog * 1.5;
+          i === 0 ? fxCtx.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+                  : fxCtx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          r *= 1 + 0.008 / PHI;
+          if (r > 145) break;
+        }
+        fxCtx.stroke(); fxCtx.restore();
+      }
+      // Token constellation — each design token color as an orbiting square
+      const gridR = 112 + Math.sin(prog * Math.PI) * 24;
+      tokenColors.forEach((col, i) => {
+        const a  = (i / tokenColors.length) * Math.PI * 2 + prog * 0.9;
+        const tx = cx + Math.cos(a) * gridR;
+        const ty = cy + Math.sin(a) * gridR;
+        const sz = 8 + Math.sin(prog * Math.PI * 2 + i) * 3;
+        fxCtx.save();
+        fxCtx.translate(tx, ty);
+        fxCtx.rotate(prog * 2 + i * 0.5);
+        fxCtx.globalAlpha  = alpha;
+        fxCtx.strokeStyle  = col;
+        fxCtx.lineWidth    = 1.5;
+        fxCtx.strokeRect(-sz / 2, -sz / 2, sz, sz);
+        fxCtx.restore();
+      });
+      // Outer harmonic ring
+      fxCtx.save();
+      fxCtx.strokeStyle = `rgba(79,140,255,${alpha * 0.22})`;
+      fxCtx.lineWidth   = 1;
+      fxCtx.beginPath();
+      fxCtx.arc(cx, cy, 148 + Math.sin(prog * Math.PI * 4) * 10, 0, Math.PI * 2);
+      fxCtx.stroke(); fxCtx.restore();
+      fxRaf = requestAnimationFrame(loop);
+    }
+    fxRaf = requestAnimationFrame(loop);
+  }
+};
+
+// 6. Per-chip data (fx key + horizon line tint)
+const chipData = {
+  'Insight':    { fxKey: 'insight',    color: 'rgba(251,191,36,0.55)'  },
+  'Innovation': { fxKey: 'innovation', color: 'rgba(79,140,255,0.55)'  },
+  'Paradox':    { fxKey: 'paradox',    color: 'rgba(167,139,250,0.55)' },
+  'Rebellion':  { fxKey: 'rebellion',  color: 'rgba(239,68,68,0.55)'   },
+  'Dream':      { fxKey: 'dream',      color: 'rgba(251,146,60,0.55)'  },
+  'VFS':        { fxKey: 'vfs',        color: 'rgba(16,185,129,0.55)'  },
+  'SDOA v4':    { fxKey: 'sdoa',       color: 'rgba(79,140,255,0.55)'  }
+};
+const fxDurations = { insight:3200, innovation:900, paradox:4000, rebellion:1400, dream:5000, vfs:2200, sdoa:4500 };
+
+// 7. Wire every .chip
+document.querySelectorAll('.chip').forEach(chip => {
+  const data = chipData[chip.textContent.trim()];
+  if (!data) return;
+  chip.addEventListener('mouseenter', () => showHorizon(chip, data.color));
+  chip.addEventListener('mouseleave', hideHorizon);
+  chip.addEventListener('click', () => {
+    stopFx();
+    const r  = chip.getBoundingClientRect();
+    const cx = r.left + r.width  / 2;
+    const cy = r.top  + r.height / 2;
+    kineticSnap(chip);
+    ghostTrace(chip);
+    FX[data.fxKey](cx, cy, performance.now());
+    setTimeout(stopFx, fxDurations[data.fxKey] + 200);
+  });
+});
+
 // ── README MODAL ───────────────────────────────────────────────
 const README_URL = 'https://raw.githubusercontent.com/trechurch/Design-Standard/main/README.md';
 
@@ -1421,4 +1846,5 @@ document.addEventListener('keydown', e => {
 
 </body>
 </html>
+
 
